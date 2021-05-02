@@ -40,7 +40,19 @@ global smooth_sort
 smooth_sort:
         test    rsi, -2
         jz      __ss_ret
+        push    rax
+        push    rcx
+        push    rdx
+        push    rbx
         push    rbp
+        push    r8
+        push    r9
+        push    r10
+        push    r11
+        push    r12
+        push    r13
+        push    r14
+        push    r15
         mov     r13, rsi
         xor     r8, r8
         xor     r9, r9
@@ -54,7 +66,19 @@ __ss_loop_hr:
         call    _heap_remove
         test    rsi, rsi
         jnz     __ss_loop_hr
+        pop     r15
+        pop     r14
+        pop     r13
+        pop     r12
+        pop     r11
+        pop     r10
+        pop     r9
+        pop     r8
         pop     rbp
+        pop     rbx
+        pop     rdx
+        pop     rcx
+        pop     rax
 __ss_ret:
         ret
 ;}}}

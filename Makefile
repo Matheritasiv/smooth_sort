@@ -6,7 +6,7 @@ core.o: $(NAME).asm
 	nasm -felf64 "$<" -o $@
 
 main.o: $(NAME).c
-	clang -c -O0 "$<" -o $@
+	clang -c -O3 "$<" -o $@
 
 $(NAME): core.o main.o
 	ld -s -dynamic-linker /lib64/ld-linux-x86-64.so.2 -z noexecstack\

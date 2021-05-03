@@ -87,96 +87,91 @@ __ss_ret:
         ret
 ;}}}
 
-;{{{ Get left and right child of a Leonardo tree
+;{{{ Get left child of a Leonardo tree
 ;;  Input: rdi, esi
-;; Output: r11, r12
-;; Mutate: r11, r12, r15
+;; Output: r11
+;; Mutate: r11
 align 16
 _get_child:
-        lea     r12, [rdi-8]
-        mov     r11, r12
-        lea     r15, [rel leonardo]
-        mov     r15, [r15+8*(rsi-2)]
-        shl     r15, 3
-        sub     r11, r15
+        lea     r11, [rel leonardo]
+        mov     r11, [r11+8*(rsi-2)]
+        shl     r11, 3
+        neg     r11
+        lea     r11, [rdi+r11-8]
         ret
 ;}}}
 ;{{{ Rebalance a Leonardo tree
 ;;  Input: rdi, esi
 ;; Output: mem
-;; Mutate: rdx, rdi, esi, r11, r12, r15
+;; Mutate: rcx, rdi, esi, r11, r12
 align 16
 __rb_loop_0:
         mov     [r12], r11
-        mov     [rdi], rdx
+        mov     [rdi], rcx
         mov     rdi, r12
 _rebalance:
         test    esi, -2
         jz      __rb_ret_0
         call    _get_child
-        mov     rdx, [r11]
-        cmp     rdx, [r12]
+        lea     r12, [rdi-8]
+        mov     rcx, [r11]
+        cmp     rcx, [r12]
         cmovge  r12, r11
         jge     __rb_cont_0
-        mov     rdx, [r12]
+        mov     rcx, [r12]
         dec     esi
 __rb_cont_0:
         dec     esi
         mov     r11, [rdi]
-        cmp     rdx, r11
+        cmp     rcx, r11
         jg      __rb_loop_0
 __rb_ret_0:
         ret
 ;}}}
 ;{{{ Rectify the Leonardo heap
-;;    Input: rdi, rsi, r8, r9, r10d
-;;   Output: mem
-;; Immutate: rax, rbp, r13
+;;  Input: rdi, rsi, r8, r9, r10d
+;; Output: mem
+;; Mutate: rcx, rbx, rdi, rsi, r8, r9, r10d, r11, r12
 align 16
 _rectify:
         mov     rbx, rsi
-        lea     rdx, [8*(rsi-1)]
-        add     rdi, rdx
+        lea     rcx, [8*(rsi-1)]
+        add     rdi, rcx
 __rt_loop_0:
-        lea     r14, [rel leonardo]
-        mov     r14, [r14+8*r10]
-        cmp     rbx, r14
+        lea     r12, [rel leonardo]
+        mov     r12, [r12+8*r10]
+        cmp     rbx, r12
         jz      __rt_cont_0
-        sub     rbx, r14
+        neg     r12
+        add     rbx, r12
+        lea     r12, [rdi+8*r12]
+        mov     rcx, [r12]
+        cmp     rcx, [rdi]
+        jle     __rt_cont_0
         cmp     r10d, 2
         jb      __rt_cont_1
+        cmp     rcx, [rdi-8]
+        jle     __rt_cont_0
         mov     esi, r10d
         call    _get_child
-        mov     rdx, [r11]
-        cmp     rdx, [r12]
-        cmovge  r12, r11
-        mov     rdx, [r12]
-        cmp     rdx, [rdi]
+        cmp     rcx, [r11]
+        jle     __rt_cont_0
 __rt_cont_1:
-        cmovl   r12, rdi
-        mov     rdx, [r12]
-        shl     r14, 3
-        neg     r14
-        add     r14, rdi
-        mov     r15, [r14]
-        cmp     rdx, r15
-        jge     __rt_cont_0
-        mov     [r12], r15
-        mov     [r14], rdx
-        mov     esi, r10d
-        call    _rebalance
-        mov     rdi, r14
+        mov     rsi, [rdi]
+        mov     [rdi], rcx
+        mov     [r12], rsi
+        mov     rdi, r12
         and     r8, -2
         bsf     rcx, r8
         jz      __rt_check_high
         add     r10d, ecx
-        mov     r15, r9
+        mov     rsi, r9
         shr     r8, cl
         shr     r9, cl
         neg     cl
         and     cl, 0x3F
-        shl     r15, cl
-        or      r8, r15
+        shl     rsi, cl
+        or      r8, rsi
         jmp     __rt_loop_0
 __rt_check_high:
         bsf     rcx, r9
@@ -225,13 +220,13 @@ __ha_else_1:
         jmp     __ha_cont_0
 __ha_else_2:
         lea     ecx, [r10d-1]
-        mov     r15, r8
+        mov     rbx, r8
         shl     r9, cl
         shl     r8, cl
         neg     cl
         and     cl, 0x3F
-        shr     r15, cl
-        or      r9, r15
+        shr     rbx, cl
+        or      r9, rbx
         or      r8, 1
         xor     r10d, r10d
         inc     r10d
@@ -245,19 +240,19 @@ __ha_else_3:
         jnz     __ha_else_4
         cmp     rsi, r13
         jz      __ha_cont_1
-        lea     r15, [rsi+1]
-        cmp     r15, r13
+        lea     rbx, [rsi+1]
+        cmp     rbx, r13
         jnz     __ha_cont_1
         test    r10d, 2
         jmp     __ha_cont_1
 __ha_else_4:
         xor     rax, rax
-        mov     r15, r13
-        sub     r15, rsi
-        lea     r14, [rel leonardo]
-        cmp     r15, [r14+8*(r10-1)]
-        cmovbe  r15, rax
-        test    r15, r15
+        mov     rbx, r13
+        sub     rbx, rsi
+        lea     rdx, [rel leonardo]
+        cmp     rbx, [rdx+8*(r10-1)]
+        cmovbe  rbx, rax
+        test    rbx, rbx
 __ha_cont_1:
         mov     rax, rdi
         mov     rbp, rsi
@@ -270,14 +265,13 @@ __ha_cont_1:
 __ha_rt:
         shl     r9, 0x20
         or      r10, r9
-        push    r8
-        push    r10
+        mov     r15, r10
+        mov     r14, r8
         call    _rectify
-        pop     r10
-        pop     r8
-        mov     r9, r10
+        mov     r8, r14
+        mov     r9, r15
         shr     r9, 0x20
-        mov     r10d, r10d
+        mov     r10d, r15d
 __ha_ret:
         mov     rsi, rbp
         mov     rdi, rax
@@ -296,13 +290,13 @@ _heap_remove:
         bsf     rcx, r8
         jz      __hr_check_high
         add     r10d, ecx
-        mov     r15, r9
+        mov     rbx, r9
         shr     r8, cl
         shr     r9, cl
         neg     cl
         and     cl, 0x3F
-        shl     r15, cl
-        or      r8, r15
+        shl     rbx, cl
+        or      r8, rbx
         jmp     __hr_ret
 __hr_check_high:
         bsf     rcx, r9
@@ -315,7 +309,7 @@ __hr_check_high:
         jmp     __hr_ret
 __hr_cont_0:
         mov     rax, rdi
-        push    rsi
+        mov     rbp, rsi
         lea     rsi, [8*(rsi-1)]
         add     rdi, rsi
         mov     esi, r10d
@@ -325,37 +319,33 @@ __hr_cont_0:
         rcl     r8, 1
         rcl     r9, 1
         dec     r10d
-        mov     rbp, r8
-        mov     r13d, r9d
-        shl     r13, 0x20
-        or      r13, r10
+        mov     r13, r8
+        mov     r14, r9
+        mov     r15, r10
         mov     rdi, rax
         mov     rsi, r11
         sub     rsi, rdi
         shr     rsi, 3
         inc     rsi
         call    _rectify
-        mov     r10d, r13d
-        shr     r13, 0x20
-        mov     r9d, r13d
-        mov     r8, rbp
-        mov     rsi, [rsp]
+        mov     r10, r15 
+        mov     r9, r14 
+        mov     r8, r13 
+        mov     rsi, rbp
         stc
         rcl     r8, 1
         rcl     r9, 1
         dec     r10d
-        mov     rbp, r8
-        mov     r13d, r9d
-        shl     r13, 0x20
-        or      r13, r10
+        mov     r13, r8
+        mov     r14, r9
+        mov     r15, r10
         mov     rdi, rax
         dec     rsi
         call    _rectify
-        mov     r10d, r13d
-        shr     r13, 0x20
-        mov     r9d, r13d
-        mov     r8, rbp
-        pop     rsi
+        mov     r10, r15 
+        mov     r9, r14 
+        mov     r8, r13 
+        mov     rsi, rbp
         mov     rdi, rax
 __hr_ret:
         dec     rsi

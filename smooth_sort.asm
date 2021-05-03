@@ -1,5 +1,8 @@
-;{{{ Leonardo index
+%use smartalign
+alignmode p6
+
 section .rodata
+;{{{ Leonardo index
         leonardo dq 0x0000000000000001, 0x0000000000000001, 0x0000000000000003,\
                 0x0000000000000005, 0x0000000000000009, 0x000000000000000F,\
                 0x0000000000000019, 0x0000000000000029, 0x0000000000000043,\
@@ -37,6 +40,7 @@ section .text
 global smooth_sort
 ;{{{ Smooth sort algorithm
 ;;  Input: rdi, rsi
+align 16
 smooth_sort:
         test    rsi, -2
         jz      __ss_ret
@@ -87,10 +91,12 @@ __ss_ret:
 ;;  Input: rdi, esi
 ;; Output: r11, r12
 ;; Mutate: r11, r12, r15
+align 16
 _get_child:
         lea     r12, [rdi-8]
         mov     r11, r12
-        mov     r15, [leonardo+8*(esi-2)]
+        lea     r15, [rel leonardo]
+        mov     r15, [r15+8*(rsi-2)]
         shl     r15, 3
         sub     r11, r15
         ret
@@ -99,6 +105,7 @@ _get_child:
 ;;  Input: rdi, esi
 ;; Output: mem
 ;; Mutate: rdx, rdi, esi, r11, r12, r15
+align 16
 __rb_loop_0:
         mov     [r12], r11
         mov     [rdi], rdx
@@ -125,12 +132,14 @@ __rb_ret_0:
 ;;    Input: rdi, rsi, r8, r9, r10d
 ;;   Output: mem
 ;; Immutate: rax, rbp, r13
+align 16
 _rectify:
         mov     rbx, rsi
         lea     rdx, [8*(rsi-1)]
         add     rdi, rdx
 __rt_loop_0:
-        mov     r14, [leonardo+8*r10d]
+        lea     r14, [rel leonardo]
+        mov     r14, [r14+8*r10]
         cmp     rbx, r14
         jz      __rt_cont_0
         sub     rbx, r14
@@ -185,6 +194,7 @@ __rt_cont_0:
 ;{{{ Add an element to the Leonardo heap
 ;;  Input: rdi, rsi, r8, r9, r10d, r13
 ;; Output: mem, rsi, r8, r9, r10d
+align 16
 _heap_add:
         inc     rsi
         test    r8, 1
@@ -244,7 +254,8 @@ __ha_else_4:
         xor     rax, rax
         mov     r15, r13
         sub     r15, rsi
-        cmp     r15, [leonardo+8*(r10d-1)]
+        lea     r14, [rel leonardo]
+        cmp     r15, [r14+8*(r10-1)]
         cmovbe  r15, rax
         test    r15, r15
 __ha_cont_1:
@@ -275,6 +286,7 @@ __ha_ret:
 ;{{{ Remove an element from the Leonardo heap
 ;;  Input: rdi, rsi, r8, r9, r10d
 ;; Output: mem, rsi, r8, r9, r10d
+align 16
 _heap_remove:
         test    rsi, rsi
         jz      __hr_ret_0

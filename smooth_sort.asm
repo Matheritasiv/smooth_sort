@@ -87,19 +87,6 @@ __ss_ret:
         ret
 ;}}}
 
-;{{{ Get left child of a Leonardo tree
-;;  Input: rdi, esi
-;; Output: r11
-;; Mutate: r11
-align 16
-_get_child:
-        lea     r11, [rel leonardo]
-        mov     r11, [r11+8*(rsi-2)]
-        shl     r11, 3
-        neg     r11
-        lea     r11, [rdi+r11-8]
-        ret
-;}}}
 ;{{{ Rebalance a Leonardo tree
 ;;  Input: rdi, esi
 ;; Output: mem
@@ -112,7 +99,11 @@ __rb_loop_0:
 _rebalance:
         test    esi, -2
         jz      __rb_ret_0
-        call    _get_child
+        lea     r11, [rel leonardo]
+        mov     r11, [r11+8*(rsi-2)]
+        shl     r11, 3
+        neg     r11
+        lea     r11, [rdi+r11-8]
         lea     r12, [rdi-8]
         mov     rcx, [r11]
         cmp     rcx, [r12]
@@ -153,7 +144,11 @@ __rt_loop_0:
         cmp     rcx, [rdi-8]
         jle     __rt_cont_0
         mov     esi, r10d
-        call    _get_child
+        lea     r11, [rel leonardo]
+        mov     r11, [r11+8*(rsi-2)]
+        shl     r11, 3
+        neg     r11
+        lea     r11, [rdi+r11-8]
         cmp     rcx, [r11]
         jle     __rt_cont_0
 __rt_cont_1:
@@ -313,7 +308,11 @@ __hr_cont_0:
         lea     rsi, [8*(rsi-1)]
         add     rdi, rsi
         mov     esi, r10d
-        call    _get_child
+        lea     r11, [rel leonardo]
+        mov     r11, [r11+8*(rsi-2)]
+        shl     r11, 3
+        neg     r11
+        lea     r11, [rdi+r11-8]
         and     r8, -2
         stc
         rcl     r8, 1
